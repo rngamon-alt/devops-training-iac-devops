@@ -1,0 +1,39 @@
+# azure-pipelines/templates/ci-generic.yml
+parameters:
+  - name: language
+    type: string
+    default: 'python'   # python o java
+  - name: version
+    type: string
+    default: ''         # versión de Python o Java
+  - name: buildCommand
+    type: string
+    default: ''         # comando build para Java, no usado en Python
+
+jobs:
+- job: BuildAndTest
+  displayName: "Build & Test ${{ parameters.language }}"
+  pool:
+    vmImage: 'ubuntu-latest'
+  steps:
+    # Configuración según lenguaje
+    - ${{ if eq(parameters.language, 'python') }}:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: ${{ parameters.version }}
+      - script: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        displayName: "Install Python dependencies"
+      - script: |
+          pytest
+        displayName: "Run Python tests"
+
+    - ${{ if eq(parameters.language, 'java') }}:
+      - task: JavaToolInstaller@0
+        inputs:
+          versionSpec: ${{ parameters.version }}
+          jdkArchitectureOption: 'x64'
+      - script: |
+          ${{ parameters.buildCommand }}
+        displayName: "Build & Test Java project"
